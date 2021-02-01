@@ -21,6 +21,7 @@ class Staff extends CustomPainter {
   var staffDistance = 10;
   var staffLines = new List<Rect>(5);
   Staff(this.begin, this.id) {
+
     for (var i=0; i<5;i++) {
       var cury = begin + i*staffDistance;
       staffLines[i] = new Rect.fromPoints(Offset(0, cury), Offset(500, cury+1));
@@ -29,7 +30,6 @@ class Staff extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-
     for(var i = 0; i<5; i++) {
       canvas.drawRect(
         staffLines[i],
@@ -75,15 +75,18 @@ class MusicScreen extends StatelessWidget {
         },
         child: Column(
           children: [
+            // This size has to be from origin to bottom left
+            // corner for the cursor hit tests to work properly.
+            // well...
             CustomPaint(
               key: staff1,
               painter: Staff(100, 1),
-              size: Size(800, 100),
+              size: Size(500, 150),
             ),
             CustomPaint(
               key: staff2,
               painter: Staff(150, 2),
-              size: Size(800, 100),
+              size: Size(500, 500),
             ),
           ]
         ),
