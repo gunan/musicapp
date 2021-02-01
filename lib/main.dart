@@ -3,6 +3,20 @@ import 'package:flutter/rendering.dart';
 
 void main() => runApp(MusicApp());
 
+// GLOBALS
+
+const STAFF_TOP_MARGIN = 100.0;
+const STAFF_LEFT_MARGIN = 100.0;
+const STAFF_WIDTH = 800.0;
+const STAFF_DISTANCE = 10.0;
+
+const STAFF_LINE_COUNT = 5;
+const STAFF_COUNT_IN_PAGE = 5;
+
+// Computed globals
+const STAFF_END = STAFF_WIDTH + STAFF_DISTANCE;
+const STAFF_HEIGHT = 1 * STAFF_DISTANCE;
+
 class MusicApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -18,31 +32,31 @@ class MusicApp extends StatelessWidget {
 class Staff extends CustomPainter {
   var begin;
   var id;
-  var staffDistance = 10;
-  var staffLines = new List<Rect>(5);
+  var staffLines = new List<Rect>(STAFF_LINE_COUNT);
   Staff(this.begin, this.id) {
-
-    for (var i=0; i<5;i++) {
-      var cury = begin + i*staffDistance;
-      staffLines[i] = new Rect.fromPoints(Offset(0, cury), Offset(500, cury+1));
+    for (var i=0; i<STAFF_LINE_COUNT;i++) {
+      var cury = begin + i*STAFF_DISTANCE;
+      staffLines[i] = new Rect.fromPoints(
+        Offset(STAFF_LEFT_MARGIN, cury),
+        Offset(STAFF_END, cury+3));
     }
   }
 
   @override
   void paint(Canvas canvas, Size size) {
-    for(var i = 0; i<5; i++) {
+    for(var i = 0; i<STAFF_LINE_COUNT; i++) {
       canvas.drawRect(
         staffLines[i],
         Paint()..color = Colors.black
                ..strokeWidth = 1.5
-               ..style = PaintingStyle.stroke);
+               ..style = PaintingStyle.fill);
     }
   }
 
   @override
   bool hitTest(Offset pos) {
     var whichRect = -1;
-    for (var i = 0; i< 5; i++) {
+    for (var i = 0; i< STAFF_LINE_COUNT; i++) {
       if(staffLines[i].contains(pos)) {
         whichRect = i;
         break;
@@ -57,14 +71,33 @@ class Staff extends CustomPainter {
   bool shouldRebuildSemantics(Staff oldDelegate) => false;
 }
 
-class MusicScreen extends StatelessWidget {
-  final GlobalKey staff1 = new GlobalKey();
-  final GlobalKey staff2 = new GlobalKey();
+class MusicScreen extends StatefulWidget {
+  _MusicScreenState createState() => _MusicScreenState();
+}
+
+class _MusicScreenState extends State<MusicScreen> {
+  var staffkeys = <GlobalKey>[];
   final result = BoxHitTestResult();
+  var children = <Widget>[
+      new SizedBox(height: 50,),
+  ];
+
+  @override
+  _MusicScreenState() {
+    for (int i=0; i<STAFF_COUNT_IN_PAGE; i++ ) {
+      GlobalKey key = new GlobalKey();
+      staffkeys.add(key);
+      var staffOffset = STAFF_TOP_MARGIN + i * STAFF_HEIGHT;
+      this.children.add(CustomPaint(
+        key: key,
+        painter: Staff(0, i),
+        size: Size(STAFF_END, staffOffset + STAFF_HEIGHT),
+        ));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    var height = 400;
     return Scaffold(
       appBar: AppBar(
         title: Text('MusicBook Demo'),
@@ -74,32 +107,17 @@ class MusicScreen extends StatelessWidget {
           handleClick(pointerEvent);
         },
         child: Column(
-          children: [
-            // This size has to be from origin to bottom left
-            // corner for the cursor hit tests to work properly.
-            // well...
-            CustomPaint(
-              key: staff1,
-              painter: Staff(100, 1),
-              size: Size(500, 150),
-            ),
-            CustomPaint(
-              key: staff2,
-              painter: Staff(150, 2),
-              size: Size(500, 500),
-            ),
-          ]
+          children: this.children,
         ),
       ),
     );
   }
 
     handleClick(final PointerEvent details) {
-      if (isClicked(details, staff1)) {
-        print('clicked staff1');
-      }
-      if (isClicked(details, staff2)) {
-        print('clicked staff2');
+      for (int i=0; i<STAFF_COUNT_IN_PAGE; i++) {
+        if (isClicked(details, staffkeys[i])) {
+          print('clicked staff number: $i');
+        }
       }
     }
 
