@@ -28,47 +28,68 @@ class MusicApp extends StatelessWidget {
   }
 }
 
-
-class Staff extends CustomPainter {
+class Staff extends ChangeNotifier implements CustomPainter {
   var begin;
   var id;
   var staffLines = new List<Rect>(STAFF_LINE_COUNT);
+  var whichRect = -1;
+  var ovalXOffset;
+  var repaint = false;
   Staff(this.begin, this.id) {
-    for (var i=0; i<STAFF_LINE_COUNT;i++) {
-      var cury = begin + i*STAFF_DISTANCE;
+    for (var i = 0; i < STAFF_LINE_COUNT; i++) {
+      var cury = begin + i * STAFF_DISTANCE;
       staffLines[i] = new Rect.fromPoints(
-        Offset(STAFF_LEFT_MARGIN, cury),
-        Offset(STAFF_END, cury+3));
+          Offset(STAFF_LEFT_MARGIN, cury), Offset(STAFF_END, cury + 3));
     }
   }
 
   @override
   void paint(Canvas canvas, Size size) {
-    for(var i = 0; i<STAFF_LINE_COUNT; i++) {
+    for (var i = 0; i < STAFF_LINE_COUNT; i++) {
       canvas.drawRect(
-        staffLines[i],
-        Paint()..color = Colors.black
-               ..strokeWidth = 1.5
-               ..style = PaintingStyle.fill);
+          staffLines[i],
+          Paint()
+            ..color = Colors.black
+            ..strokeWidth = 1.5
+            ..style = PaintingStyle.fill);
+    }
+    if (this.whichRect != -1) {
+      var noteTop = this.begin + STAFF_DISTANCE * this.whichRect - 3;
+      var noteBottom = noteTop + 9;
+      Rect note = new Rect.fromPoints(
+        Offset(this.ovalXOffset - 8, noteTop),
+        Offset(this.ovalXOffset + 8, noteBottom),
+      );
+      canvas.drawOval(
+          note,
+          Paint()
+            ..color = Colors.blueGrey
+            ..style = PaintingStyle.fill);
+      this.repaint = false;
     }
   }
 
   @override
   bool hitTest(Offset pos) {
-    var whichRect = -1;
-    for (var i = 0; i< STAFF_LINE_COUNT; i++) {
-      if(staffLines[i].contains(pos)) {
-        whichRect = i;
+    this.whichRect = -1;
+    for (var i = 0; i < STAFF_LINE_COUNT; i++) {
+      if (staffLines[i].contains(pos)) {
+        this.whichRect = i;
+        this.ovalXOffset = pos.dx;
+        this.repaint = true;
+        this.notifyListeners();
         break;
       }
     }
-    print('Mouse over at staff: $id, line:$whichRect');
   }
 
   @override
-  bool shouldRepaint(Staff oldDelegate) => false;
+  bool shouldRepaint(Staff oldDelegate) => true;
   @override
   bool shouldRebuildSemantics(Staff oldDelegate) => false;
+
+  @override
+  SemanticsBuilderCallback get semanticsBuilder => null;
 }
 
 class MusicScreen extends StatefulWidget {
@@ -79,20 +100,22 @@ class _MusicScreenState extends State<MusicScreen> {
   var staffkeys = <GlobalKey>[];
   final result = BoxHitTestResult();
   var children = <Widget>[
-      new SizedBox(height: 50,),
+    new SizedBox(
+      height: 50,
+    ),
   ];
 
   @override
   _MusicScreenState() {
-    for (int i=0; i<STAFF_COUNT_IN_PAGE; i++ ) {
+    for (int i = 0; i < STAFF_COUNT_IN_PAGE; i++) {
       GlobalKey key = new GlobalKey();
       staffkeys.add(key);
       var staffOffset = STAFF_TOP_MARGIN + i * STAFF_HEIGHT;
       this.children.add(CustomPaint(
-        key: key,
-        painter: Staff(0, i),
-        size: Size(STAFF_END, staffOffset + STAFF_HEIGHT),
-        ));
+            key: key,
+            painter: Staff(0, i),
+            size: Size(STAFF_END, staffOffset + STAFF_HEIGHT),
+          ));
     }
   }
 
@@ -113,21 +136,21 @@ class _MusicScreenState extends State<MusicScreen> {
     );
   }
 
-    handleClick(final PointerEvent details) {
-      for (int i=0; i<STAFF_COUNT_IN_PAGE; i++) {
-        if (isClicked(details, staffkeys[i])) {
-          print('clicked staff number: $i');
-        }
+  handleClick(final PointerEvent details) {
+    for (int i = 0; i < STAFF_COUNT_IN_PAGE; i++) {
+      if (isClicked(details, staffkeys[i])) {
+        print('clicked staff number: $i');
       }
     }
+  }
 
-    bool isClicked(PointerEvent details, GlobalKey key) {
-      RenderBox staffBox = key.currentContext.findRenderObject();
-      Offset localClick = staffBox.globalToLocal(details.position);
+  bool isClicked(PointerEvent details, GlobalKey key) {
+    RenderBox staffBox = key.currentContext.findRenderObject();
+    Offset localClick = staffBox.globalToLocal(details.position);
     //    Offset localClick = details.localPosition
-      if (staffBox.hitTest(result, position: localClick)) {
-        return true;
-      }
-      return false;
+    if (staffBox.hitTest(result, position: localClick)) {
+      return true;
+    }
+    return false;
   }
 }
