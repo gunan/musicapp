@@ -10,8 +10,23 @@ jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
     steps:
+      # Set up flutter
+      - name: Clone flutter repository with beta channel
+        uses: actions/checkout@v2
+        with:
+          repository: 'flutter/flutter'
+          ref: 'beta'
+          path: 'flutter'
+          fetch-depth: 0
+      - name: Add flutter to PATH
+        run: echo "$GITHUB_WORKSPACE/flutter/bin" >> $GITHUB_PATH
+      - name: Run flutter doctor
+        run: flutter doctor -v
+      - name: Enable flutter web
+        run: flutter config --enable-web
+      # Check out this code and run stuff.
       - uses: actions/checkout@v2
-      - run: flutter build web;
+      - run: flutter build web
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
