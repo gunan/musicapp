@@ -32,14 +32,27 @@ class Staff extends ChangeNotifier implements CustomPainter {
   var begin;
   var id;
   var staffLines = new List<Rect>(STAFF_LINE_COUNT);
+  var staffLineCenters = new List<double>(STAFF_LINE_COUNT);
+  var staffSpaces = new List<Rect>(STAFF_LINE_COUNT + 1);
+  var staffSpaceCenters = new List<double>(STAFF_LINE_COUNT + 1);
   var whichRect = -1;
   var ovalXOffset;
-  var repaint = false;
   Staff(this.begin, this.id) {
     for (var i = 0; i < STAFF_LINE_COUNT; i++) {
       var cury = begin + i * STAFF_DISTANCE;
       staffLines[i] = new Rect.fromPoints(
           Offset(STAFF_LEFT_MARGIN, cury), Offset(STAFF_END, cury + 3));
+      staffLineCenters[i] = cury + 1.5;
+    }
+    var spaceStart = begin - (STAFF_DISTANCE / 2.0);
+    var spaceHalfHeight = (STAFF_DISTANCE - 3) / 2.0;
+    for (var i = 0; i < STAFF_LINE_COUNT + 1; i++) {
+      var rectCenter = spaceStart + i * STAFF_DISTANCE;
+      staffSpaceCenters[i] = rectCenter;
+      staffSpaces[i] = new Rect.fromPoints(
+        Offset(STAFF_LEFT_MARGIN, rectCenter + spaceHalfHeight),
+        Offset(STAFF_END, rectCenter - spaceHalfHeight),
+      );
     }
   }
 
@@ -54,8 +67,14 @@ class Staff extends ChangeNotifier implements CustomPainter {
             ..style = PaintingStyle.fill);
     }
     if (this.whichRect != -1) {
-      var noteTop = this.begin + STAFF_DISTANCE * this.whichRect - 3;
-      var noteBottom = noteTop + 9;
+      var noteTop;
+      if (this.whichRect < 5) {
+        noteTop = this.staffLineCenters[this.whichRect] - 5;
+      } else {
+        noteTop = this.staffSpaceCenters[this.whichRect - 5] - 5;
+      }
+
+      var noteBottom = noteTop + 10;
       Rect note = new Rect.fromPoints(
         Offset(this.ovalXOffset - 8, noteTop),
         Offset(this.ovalXOffset + 8, noteBottom),
@@ -65,7 +84,6 @@ class Staff extends ChangeNotifier implements CustomPainter {
           Paint()
             ..color = Colors.blueGrey
             ..style = PaintingStyle.fill);
-      this.repaint = false;
     }
   }
 
@@ -76,11 +94,19 @@ class Staff extends ChangeNotifier implements CustomPainter {
       if (staffLines[i].contains(pos)) {
         this.whichRect = i;
         this.ovalXOffset = pos.dx;
-        this.repaint = true;
         this.notifyListeners();
-        break;
+        return true;
       }
     }
+    for (var i = 0; i < STAFF_LINE_COUNT + 1; i++) {
+      if (staffSpaces[i].contains(pos)) {
+        this.whichRect = 5 + i;
+        this.ovalXOffset = pos.dx;
+        this.notifyListeners();
+        return true;
+      }
+    }
+    return false;
   }
 
   @override
