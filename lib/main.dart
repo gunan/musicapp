@@ -6,9 +6,11 @@ void main() => runApp(MusicApp());
 // GLOBALS
 
 const STAFF_TOP_MARGIN = 100.0;
-const STAFF_LEFT_MARGIN = 100.0;
-const STAFF_WIDTH = 800.0;
-const STAFF_DISTANCE = 10.0;
+const STAFF_LEFT_MARGIN = 50.0;
+const STAFF_WIDTH = 900.0;
+
+const STAFF_LINE_THICKNESS = 3.0;
+const STAFF_DISTANCE = 20.0;
 
 const STAFF_LINE_COUNT = 5;
 const STAFF_COUNT_IN_PAGE = 5;
@@ -16,6 +18,8 @@ const STAFF_COUNT_IN_PAGE = 5;
 // Computed globals
 const STAFF_END = STAFF_WIDTH + STAFF_DISTANCE;
 const STAFF_HEIGHT = 1 * STAFF_DISTANCE;
+const SCORE_OVAL_HEIGHT = STAFF_DISTANCE;
+const SCORE_OVAL_WIDTH = STAFF_DISTANCE * 2;
 
 class MusicApp extends StatelessWidget {
   @override
@@ -37,15 +41,16 @@ class Staff extends ChangeNotifier implements CustomPainter {
   var staffSpaceCenters = new List<double>(STAFF_LINE_COUNT + 1);
   var whichRect = -1;
   var ovalXOffset;
-  Staff(this.begin, this.id) {
+  Staff(b, this.id) {
+    this.begin = b + STAFF_DISTANCE;
     for (var i = 0; i < STAFF_LINE_COUNT; i++) {
       var cury = begin + i * STAFF_DISTANCE;
-      staffLines[i] = new Rect.fromPoints(
-          Offset(STAFF_LEFT_MARGIN, cury), Offset(STAFF_END, cury + 3));
-      staffLineCenters[i] = cury + 1.5;
+      staffLines[i] = new Rect.fromPoints(Offset(STAFF_LEFT_MARGIN, cury),
+          Offset(STAFF_END, cury + STAFF_LINE_THICKNESS));
+      staffLineCenters[i] = cury + STAFF_LINE_THICKNESS / 2;
     }
     var spaceStart = begin - (STAFF_DISTANCE / 2.0);
-    var spaceHalfHeight = (STAFF_DISTANCE - 3) / 2.0;
+    var spaceHalfHeight = (STAFF_DISTANCE - STAFF_LINE_THICKNESS) / 2.0;
     for (var i = 0; i < STAFF_LINE_COUNT + 1; i++) {
       var rectCenter = spaceStart + i * STAFF_DISTANCE;
       staffSpaceCenters[i] = rectCenter;
@@ -69,15 +74,17 @@ class Staff extends ChangeNotifier implements CustomPainter {
     if (this.whichRect != -1) {
       var noteTop;
       if (this.whichRect < 5) {
-        noteTop = this.staffLineCenters[this.whichRect] - 5;
+        noteTop = this.staffLineCenters[this.whichRect] - SCORE_OVAL_HEIGHT / 2;
       } else {
-        noteTop = this.staffSpaceCenters[this.whichRect - 5] - 5;
+        noteTop = this.staffSpaceCenters[this.whichRect - 5] +
+            1 -
+            SCORE_OVAL_HEIGHT / 2;
       }
 
-      var noteBottom = noteTop + 10;
+      var noteBottom = noteTop + SCORE_OVAL_HEIGHT;
       Rect note = new Rect.fromPoints(
-        Offset(this.ovalXOffset - 8, noteTop),
-        Offset(this.ovalXOffset + 8, noteBottom),
+        Offset(this.ovalXOffset - SCORE_OVAL_WIDTH / 2, noteTop),
+        Offset(this.ovalXOffset + SCORE_OVAL_WIDTH / 2, noteBottom),
       );
       canvas.drawOval(
           note,
