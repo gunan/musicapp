@@ -35,11 +35,7 @@ class _MusicScreenState extends State<MusicScreen> {
       GlobalKey key = new GlobalKey();
       staffkeys.add(key);
       var staffOffset = STAFF_TOP_MARGIN + i * STAFF_HEIGHT;
-      this.children.add(CustomPaint(
-            key: key,
-            painter: Staff(0, i),
-            size: Size(STAFF_END, staffOffset + STAFF_HEIGHT),
-          ));
+      this.children.add(new StaffWithMouse(key: key, id: i));
     }
   }
 
