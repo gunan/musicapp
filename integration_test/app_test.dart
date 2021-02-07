@@ -11,7 +11,8 @@ import 'package:integration_test/integration_test.dart';
 
 import 'package:musicapp/main.dart' as app;
 
-void main() => run(_testMain);
+// void main() => run(_testMain);
+void main() => _testMain();
 
 void _testMain() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
