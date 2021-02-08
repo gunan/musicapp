@@ -16,6 +16,8 @@ class _StaffWithMouseState extends State<StaffWithMouse> {
   Offset cursorLocation = new Offset(0.0, 0.0);
   int id;
 
+  var noteLocations = <Offset>[];
+
   _StaffWithMouseState(this.id);
 
   void _onEnter(PointerEvent details) {
@@ -36,24 +38,39 @@ class _StaffWithMouseState extends State<StaffWithMouse> {
     });
   }
 
+  void _createNoteAtLocation(TapDownDetails details) {
+    this.noteLocations.add(details.localPosition);
+  }
+
   @override
   Widget build(BuildContext context) {
     var staffOffset = STAFF_TOP_MARGIN + this.id * STAFF_HEIGHT;
 
     return MouseRegion(
-      child: CustomPaint(
-        painter: Staff(
-          id: this.id,
-          cursorInside: this.isCursorInside,
-          cursorLocation: this.cursorLocation,
+      child: GestureDetector(
+        child: CustomPaint(
+          painter: Staff(
+            id: this.id,
+            cursorInside: this.isCursorInside,
+            cursorLocation: this.cursorLocation,
+            noteLocations: this.noteLocations,
+          ),
+          size: Size(STAFF_END, staffOffset + STAFF_HEIGHT),
         ),
-        size: Size(STAFF_END, staffOffset + STAFF_HEIGHT),
+        onTapDown: _createNoteAtLocation,
       ),
       onEnter: _onEnter,
       onExit: _onExit,
       onHover: _onUpdate,
     );
   }
+}
+
+class NoteLocation {
+  int staffLocation;
+  double staffOffset;
+
+  NoteLocation(this.staffLocation, this.staffOffset);
 }
 
 class Staff extends CustomPainter {
@@ -63,12 +80,13 @@ class Staff extends CustomPainter {
   var staffLineCenters = new List<double>(STAFF_LINE_COUNT);
   var staffSpaces = new List<Rect>(STAFF_LINE_COUNT + 1);
   var staffSpaceCenters = new List<double>(STAFF_LINE_COUNT + 1);
-  var whichRect = -1;
-  var ovalXOffset;
+
+  var phantomOvalLocation;
+  var noteLocations;
 
   bool cursorInside = false;
   Offset cursorLocation = new Offset(0.0, 0.0);
-  Staff({this.id, this.cursorInside, this.cursorLocation}) {
+  Staff({this.id, this.cursorInside, this.cursorLocation, this.noteLocations}) {
     this.begin = STAFF_DISTANCE;
     for (var i = 0; i < STAFF_LINE_COUNT; i++) {
       var cury = begin + i * STAFF_DISTANCE;
@@ -88,26 +106,46 @@ class Staff extends CustomPainter {
     }
   }
 
-  bool _checkOval() {
-    if (this.cursorInside) {
-      this.whichRect = -1;
-      var pos = this.cursorLocation;
-      for (var i = 0; i < STAFF_LINE_COUNT; i++) {
-        if (staffLines[i].contains(pos)) {
-          this.whichRect = i;
-          this.ovalXOffset = pos.dx;
-          return true;
-        }
-      }
-      for (var i = 0; i < STAFF_LINE_COUNT + 1; i++) {
-        if (staffSpaces[i].contains(pos)) {
-          this.whichRect = 5 + i;
-          this.ovalXOffset = pos.dx;
-          return true;
-        }
+  NoteLocation _getOvalLocation(Offset loc) {
+    for (var i = 0; i < STAFF_LINE_COUNT; i++) {
+      if (staffLines[i].contains(loc)) {
+        return NoteLocation(i, loc.dx);
       }
     }
-    return false;
+    for (var i = 0; i < STAFF_LINE_COUNT + 1; i++) {
+      if (staffSpaces[i].contains(loc)) {
+        return NoteLocation(5 + i, loc.dx);
+      }
+    }
+    return null;
+  }
+
+  void _drawOval(Canvas canvas, Offset pos, Color col) {
+    var loc = _getOvalLocation(pos);
+    if (loc == null) {
+      return;
+    }
+
+    var noteTop;
+    if (loc.staffLocation < 5) {
+      noteTop =
+          this.staffLineCenters[loc.staffLocation] - SCORE_OVAL_HEIGHT / 2;
+    } else {
+      noteTop = this.staffSpaceCenters[loc.staffLocation - 5] +
+          1 -
+          SCORE_OVAL_HEIGHT / 2;
+    }
+
+    var noteBottom = noteTop + SCORE_OVAL_HEIGHT;
+    Rect note = new Rect.fromPoints(
+      Offset(loc.staffOffset - SCORE_OVAL_WIDTH / 2, noteTop),
+      Offset(loc.staffOffset + SCORE_OVAL_WIDTH / 2, noteBottom),
+    );
+    canvas.drawOval(
+        note,
+        Paint()
+          ..color = col
+          ..style = PaintingStyle.fill);
   }
 
   @override
@@ -120,26 +158,15 @@ class Staff extends CustomPainter {
             ..strokeWidth = 1.5
             ..style = PaintingStyle.fill);
     }
-    if (_checkOval()) {
-      var noteTop;
-      if (this.whichRect < 5) {
-        noteTop = this.staffLineCenters[this.whichRect] - SCORE_OVAL_HEIGHT / 2;
-      } else {
-        noteTop = this.staffSpaceCenters[this.whichRect - 5] +
-            1 -
-            SCORE_OVAL_HEIGHT / 2;
-      }
 
-      var noteBottom = noteTop + SCORE_OVAL_HEIGHT;
-      Rect note = new Rect.fromPoints(
-        Offset(this.ovalXOffset - SCORE_OVAL_WIDTH / 2, noteTop),
-        Offset(this.ovalXOffset + SCORE_OVAL_WIDTH / 2, noteBottom),
-      );
-      canvas.drawOval(
-          note,
-          Paint()
-            ..color = Colors.blueGrey
-            ..style = PaintingStyle.fill);
+    // Phantom Oval first
+    if (this.cursorInside) {
+      this._drawOval(canvas, this.cursorLocation, Colors.blueGrey);
+    }
+
+    // Clicked stuff next
+    for (var loc in this.noteLocations) {
+      this._drawOval(canvas, loc, Colors.black);
     }
   }
 
