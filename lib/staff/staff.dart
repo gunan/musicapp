@@ -1,6 +1,12 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:flutter/painting.dart';
+
+import '../assets.dart';
 import '../globals.dart';
 
 class StaffWithMouse extends StatefulWidget {
@@ -84,6 +90,8 @@ class Staff extends CustomPainter {
   var phantomOvalLocation;
   var noteLocations;
 
+  ui.Image gClefImage;
+
   bool cursorInside = false;
   Offset cursorLocation = new Offset(0.0, 0.0);
   Staff({this.id, this.cursorInside, this.cursorLocation, this.noteLocations}) {
@@ -104,6 +112,17 @@ class Staff extends CustomPainter {
         Offset(STAFF_END, rectCenter - spaceHalfHeight),
       );
     }
+
+    this.initImage();
+  }
+
+  void initImage() async {
+    var _imageBytes = await rootBundle.load(GClefAsset);
+    var targetHeight2 = 80;
+    var _bg = await ui.instantiateImageCodec(_imageBytes.buffer.asUint8List(),
+        targetHeight: targetHeight2);
+    var _frame = await _bg.getNextFrame();
+    this.gClefImage = _frame.image;
   }
 
   NoteLocation _getOvalLocation(Offset loc) {
@@ -167,6 +186,11 @@ class Staff extends CustomPainter {
     // Clicked stuff next
     for (var loc in this.noteLocations) {
       this._drawOval(canvas, loc, Colors.black);
+    }
+
+    // Draw the clef
+    if (this.gClefImage != null) {
+      canvas.drawImage(this.gClefImage, new Offset(0.0, 0.0), new Paint());
     }
   }
 
