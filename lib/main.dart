@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:musicapp/old_music_screen/music_screen.dart';
+import 'package:musicapp/main_menu/main_menu.dart';
 
 void main() => runApp(MusicApp());
 
@@ -8,7 +8,7 @@ class MusicApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       routes: {
-        '/': (context) => MusicScreen(),
+        '/': (context) => MainMenu(),
       },
     );
   }
