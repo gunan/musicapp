@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:musicapp/old_music_screen/music_screen.dart';
+import 'package:musicapp/new_music_screen/new_music_screen.dart';
 
 class MainMenu extends StatelessWidget {
   @override
@@ -31,7 +32,21 @@ class MainMenu extends StatelessWidget {
                               builder: (context) => MusicScreen()),
                         );
                       }),
-                  Card(child: Text('New stuff')),
+                  GestureDetector(
+                      child: Card(
+                        color: Colors.blueGrey,
+                        shadowColor: Colors.teal,
+                        elevation: 5,
+                        child: Text(
+                            'Stuff that uses Sheet Music flutter package.'),
+                      ),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => NewMusicScreen()),
+                        );
+                      }),
                 ])));
   }
 }
